@@ -25,8 +25,8 @@
             position: absolute;
         }
         .bullet {
-            width: 6px;
-            height: 4px;
+            width: 4px;
+            height: 6px;
             background-color: green;
             position: absolute;
         }
@@ -46,7 +46,11 @@
             game_score=0;
             document.getElementById("score").innerHTML=game_score;
             game_time=0;
-            document.getElementById("game_time").innerHTML=game_time
+            document.getElementById("game_time").innerHTML=game_time;
+            game_timer=setInterval(function() {
+                game_time++;
+                document.getElementById("game_time").innerHTML=game_time;
+            },1000);
             ufo_creater=setInterval(ufo_create,1000);
             game_starting=true;
             document.getElementById("restart").style.display="none";
@@ -62,6 +66,7 @@
             });
             Array.from(document.getElementsByClassName("bullet")).forEach((b)=>{
                 clearInterval(b.move);
+                b.remove();
             });
             document.getElementById("restart").style.display="block";
             var ranking=sessionStorage.getItem("ranking");
@@ -81,17 +86,15 @@
                 });
                 sessionStorage.setItem("ranking",JSON.stringify(data));
             }
-            data[{"name":"XXX","score":100,"time":64},{"name":"YYY","score":98,"time":62},{},...];
-            sessionStorage.setItem("rank",data);
+            sessionStorage.setItem("ranking",JSON.stringify(data));
         }
         function mykeydown() {
             event.preventDefault();
             if(event.key == " ") {
                 shoot();
             } else if(Object.keys(dir).includes(event.key)) {
-                dir[event.key]=1
+            dir[event.key]=1;
             }
-            
         }
         function mykeyup() {
             event.preventDefault();
@@ -175,14 +178,56 @@
             b.style.top=b.posY+"px";
             b.move=setInterval(bullet_move,10,b);
         }
+        function show_ranking() {
+            var ranking=sessionStorage.getItem("ranking");
+            if(ranking) {
+                document.getElementById("ranking").innerHTML="";
+                var data=Array.from(JSON.parse(ranking));
+                data.forEach((x)=>{
+                    var li=document.createElement("li");
+                    li.innerHTML=`<span style="width:150px">${x.name}</span> <span>用${x.time}秒</span> <span>得${x.score}分</span>`;
+                    document.getElementById("ranking").appendChild(li);
+                });
+            }
+        }
+        function do_ranking() {
+            var ranking=sessionStorage.getItem("ranking");
+            if(ranking==null) {
+                ranking=[];
+                ranking.push({"name":prompt("enter you name:"),"score":game_score,"time":game_time});
+                sessionStorage.setItem("ranking",JSON.stringify(ranking));
+            } else {
+                var data=Array.from(JSON.parse(ranking));
+                if(data.length<5) {
+                    data.push({"name":prompt("enter your name:"),"score":game_score,"time":game_time});
+                } else if(game_score > data[4].score) {
+                    data.pop();
+                    data.push({"name":prompt("請輸入你的名稱："),"score":game_score,"time":game_time});
+                }
+            data.sort((a,b)=>{
+                    return b.score-a.score;
+                });
+            sessionStorage.setItem("ranking",JSON.stringify(data));        
+            }
+            show_ranking();
+        }
     </script>
 </head>
 <body onload="game_init()" onkeydown="mykeydown()" onkeyup="mykeyup()">
-    <div id="sta"
-    <div id="space">
-        <div id="ship" style="left: 380px; top: 740px;"></div>
-        <!--img src="pic/ship.png" width="40px"-->
-        <div class="bullet"></div>
+    <div style="display:inline-block; width:800px;">
+        <div id="status">
+            <span>得分：<span id="score">0</span> 分</span>
+            <span style="float:right;">時間：<span id="game_time">0</span> 秒</span>
+        </div>
+        <div id="spaces">
+            <div id="ship"></div>
+            <!--img src="pic/ship.png" width="40px"-->
+        </div>
+        <button id="restart" onclick="game_init();">重新開始</button>
     </div>
-
-</body></html>
+    <div style="display:inline-block; height:820px; vertical-align:bottom; margin-left:10px;">
+        <div style="font-size:2em; font-weight:bolder;">排行榜</div>
+        <ol id="ranking"></ol>
+    </div>
+</body>
+</html>
